@@ -39,6 +39,8 @@ export const medicineAPI = {
   create: (data: any) => api.post('/medicines', data),
   update: (id: number, data: any) => api.put(`/medicines/${id}`, data),
   delete: (id: number) => api.delete(`/medicines/${id}`),
+  getInventoryMovements: (id: number) => api.get(`/medicines/${id}/inventory-movements`),
+  getPurchaseRecords: (id: number) => api.get(`/medicines/${id}/purchase-records`),
 };
 
 // 医院相关API

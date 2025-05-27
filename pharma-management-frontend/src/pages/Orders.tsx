@@ -14,6 +14,7 @@ import {
   Tag,
   InputNumber,
   Divider,
+  Input,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -314,6 +315,12 @@ const Orders: React.FC = () => {
           >
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
+          <Form.Item
+            name="notes"
+            label="备注"
+          >
+            <Input.TextArea rows={3} placeholder="请输入订单备注信息" />
+          </Form.Item>
 
           <Divider>订单明细</Divider>
           <Form.List name="details">
@@ -372,6 +379,7 @@ const Orders: React.FC = () => {
             <p><strong>负责员工：</strong>{viewingOrder.employee_name}</p>
             <p><strong>订单日期：</strong>{dayjs(viewingOrder.order_date).format('YYYY-MM-DD')}</p>
             <p><strong>订单金额：</strong>¥{viewingOrder.total_amount.toFixed(2)}</p>
+            {viewingOrder.notes && <p><strong>备注：</strong>{viewingOrder.notes}</p>}
 
             <Divider>订单明细</Divider>
             <Table

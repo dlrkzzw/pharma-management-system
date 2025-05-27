@@ -87,6 +87,7 @@ function initializeTables() {
       status TEXT DEFAULT 'pending',
       total_amount DECIMAL(10,2),
       payment_status TEXT DEFAULT 'unpaid',
+      notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (hospital_id) REFERENCES hospitals (id),
@@ -118,6 +119,39 @@ function initializeTables() {
       price_type TEXT,
       price DECIMAL(10,2),
       effective_date DATE,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (medicine_id) REFERENCES medicines (id)
+    )
+  `);
+
+  // 库存变动记录表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS inventory_movements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      medicine_id INTEGER,
+      movement_type TEXT NOT NULL, -- 'in' 进货, 'out' 出货, 'adjustment' 调整
+      quantity INTEGER NOT NULL,
+      reference_type TEXT, -- 'purchase' 进货, 'order' 订单, 'adjustment' 调整
+      reference_id INTEGER, -- 关联的进货单或订单ID
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (medicine_id) REFERENCES medicines (id)
+    )
+  `);
+
+  // 进货记录表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS purchase_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      medicine_id INTEGER,
+      supplier_name TEXT,
+      purchase_quantity INTEGER,
+      purchase_price DECIMAL(10,2),
+      total_cost DECIMAL(10,2),
+      purchase_date DATE,
+      batch_number TEXT,
+      expiry_date DATE,
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (medicine_id) REFERENCES medicines (id)

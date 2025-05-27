@@ -70,6 +70,7 @@ export interface Order {
   status: string;
   total_amount: number;
   payment_status: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
   details?: OrderDetail[];
@@ -85,6 +86,34 @@ export interface OrderDetail {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  created_at: string;
+}
+
+// 库存变动记录类型
+export interface InventoryMovement {
+  id: number;
+  medicine_id: number;
+  movement_type: 'in' | 'out' | 'adjustment';
+  quantity: number;
+  reference_type?: 'purchase' | 'order' | 'adjustment';
+  reference_id?: number;
+  reference_number?: string;
+  notes?: string;
+  created_at: string;
+}
+
+// 进货记录类型
+export interface PurchaseRecord {
+  id: number;
+  medicine_id: number;
+  supplier_name: string;
+  purchase_quantity: number;
+  purchase_price: number;
+  total_cost: number;
+  purchase_date: string;
+  batch_number?: string;
+  expiry_date?: string;
+  notes?: string;
   created_at: string;
 }
 

@@ -6,10 +6,10 @@ const router = express.Router();
 // 获取所有药品
 router.get('/', (req, res) => {
   const sql = `
-    SELECT * FROM medicines 
+    SELECT * FROM medicines
     ORDER BY created_at DESC
   `;
-  
+
   db.all(sql, [], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const { id } = req.params;
   const sql = 'SELECT * FROM medicines WHERE id = ?';
-  
+
   db.get(sql, [id], (err, row) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -70,9 +70,9 @@ router.post('/', (req, res) => {
       res.status(500).json({ error: err.message });
       return;
     }
-    res.status(201).json({ 
-      message: '药品创建成功', 
-      id: this.lastID 
+    res.status(201).json({
+      message: '药品创建成功',
+      id: this.lastID
     });
   });
 });
@@ -94,7 +94,7 @@ router.put('/:id', (req, res) => {
   const sql = `
     UPDATE medicines SET
       name = ?, specification = ?, manufacturer = ?, approval_number = ?,
-      current_cost_price = ?, suggested_price = ?, stock_quantity = ?, 
+      current_cost_price = ?, suggested_price = ?, stock_quantity = ?,
       safety_stock = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `;
@@ -119,7 +119,7 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
   const sql = 'DELETE FROM medicines WHERE id = ?';
-  
+
   db.run(sql, [id], function(err) {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -130,6 +130,52 @@ router.delete('/:id', (req, res) => {
       return;
     }
     res.json({ message: '药品删除成功' });
+  });
+});
+
+// 获取药品库存变动记录
+router.get('/:id/inventory-movements', (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT im.*,
+           CASE
+             WHEN im.reference_type = 'order' THEN so.order_number
+             WHEN im.reference_type = 'purchase' THEN pr.batch_number
+             ELSE NULL
+           END as reference_number
+    FROM inventory_movements im
+    LEFT JOIN sales_orders so ON im.reference_type = 'order' AND im.reference_id = so.id
+    LEFT JOIN purchase_records pr ON im.reference_type = 'purchase' AND im.reference_id = pr.id
+    WHERE im.medicine_id = ?
+    ORDER BY im.created_at DESC
+  `;
+
+  db.all(sql, [id], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ data: rows });
+  });
+});
+
+// 获取药品进货记录
+router.get('/:id/purchase-records', (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT * FROM purchase_records
+    WHERE medicine_id = ?
+    ORDER BY purchase_date DESC
+  `;
+
+  db.all(sql, [id], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ data: rows });
   });
 });
 
