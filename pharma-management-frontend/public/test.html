@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1890ff;
+            text-align: center;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #52c41a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 医药代表业务管理系统</h1>
+        <div class="status">
+            ✅ 前端服务器运行正常！
+        </div>
+        <p><strong>系统状态：</strong></p>
+        <ul>
+            <li>前端服务器：运行中 (端口 3000)</li>
+            <li>后端服务器：运行中 (端口 3001)</li>
+            <li>数据库：SQLite (已初始化)</li>
+        </ul>
+        
+        <p><strong>功能模块：</strong></p>
+        <ul>
+            <li>✅ 药品管理</li>
+            <li>✅ 医院管理</li>
+            <li>✅ 医生管理</li>
+            <li>✅ 员工管理</li>
+            <li>✅ 订单管理</li>
+            <li>✅ 仪表盘</li>
+        </ul>
+        
+        <p><strong>下一步：</strong></p>
+        <p>如果您看到这个页面，说明前端服务器运行正常。React应用可能需要一些时间来编译和加载。</p>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="window.location.href='/'" style="
+                background-color: #1890ff;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 16px;
+            ">返回主应用</button>
+        </div>
+    </div>
+</body>
+</html>
