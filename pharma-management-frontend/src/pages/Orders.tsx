@@ -15,7 +15,7 @@ import {
   InputNumber,
   Divider,
 } from 'antd';
-import { PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { orderAPI, hospitalAPI, doctorAPI, employeeAPI, medicineAPI } from '../services/api';
 import type { Order, Hospital, Doctor, Employee, Medicine } from '../types';
@@ -32,9 +32,12 @@ const Orders: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
 
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [form] = Form.useForm();
+  const [statusForm] = Form.useForm();
 
   useEffect(() => {
     loadOrders();
@@ -115,6 +118,29 @@ const Orders: React.FC = () => {
     }
   };
 
+  const handleEditStatus = (record: Order) => {
+    setEditingOrder(record);
+    statusForm.setFieldsValue({
+      status: record.status,
+      payment_status: record.payment_status,
+    });
+    setStatusModalVisible(true);
+  };
+
+  const handleStatusSubmit = async (values: any) => {
+    if (!editingOrder) return;
+
+    try {
+      await orderAPI.updateStatus(editingOrder.id, values);
+      message.success('状态更新成功');
+      setStatusModalVisible(false);
+      setEditingOrder(null);
+      loadOrders();
+    } catch (error) {
+      message.error('状态更新失败');
+    }
+  };
+
   const columns = [
     {
       title: '订单编号',
@@ -179,6 +205,13 @@ const Orders: React.FC = () => {
             onClick={() => handleView(record)}
           >
             查看
+          </Button>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEditStatus(record)}
+          >
+            修改状态
           </Button>
           <Popconfirm
             title="确定要删除这个订单吗？"
@@ -356,6 +389,39 @@ const Orders: React.FC = () => {
             />
           </div>
         )}
+      </Modal>
+
+      {/* 状态修改模态框 */}
+      <Modal
+        title="修改订单状态"
+        open={statusModalVisible}
+        onCancel={() => {
+          setStatusModalVisible(false);
+          setEditingOrder(null);
+        }}
+        onOk={() => statusForm.submit()}
+        width={400}
+      >
+        <Form
+          form={statusForm}
+          layout="vertical"
+          onFinish={handleStatusSubmit}
+        >
+          <Form.Item
+            name="status"
+            label="订单状态"
+            rules={[{ required: true, message: '请选择订单状态' }]}
+          >
+            <Select placeholder="请选择订单状态" options={ORDER_STATUS_OPTIONS} />
+          </Form.Item>
+          <Form.Item
+            name="payment_status"
+            label="付款状态"
+            rules={[{ required: true, message: '请选择付款状态' }]}
+          >
+            <Select placeholder="请选择付款状态" options={PAYMENT_STATUS_OPTIONS} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
