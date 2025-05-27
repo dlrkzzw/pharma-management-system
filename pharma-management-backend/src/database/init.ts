@@ -159,6 +159,33 @@ function initializeTables() {
   `);
 
   console.log('Database tables initialized');
+
+  // 数据库迁移 - 添加缺失的列
+  migrateDatabase();
+}
+
+function migrateDatabase() {
+  console.log('Running database migrations...');
+
+  // 检查并添加 sales_orders 表的 notes 列
+  db.all("PRAGMA table_info(sales_orders)", (err, columns) => {
+    if (err) {
+      console.error('Error checking sales_orders table:', err);
+      return;
+    }
+
+    const hasNotesColumn = columns.some((col: any) => col.name === 'notes');
+    if (!hasNotesColumn) {
+      console.log('Adding notes column to sales_orders table...');
+      db.run("ALTER TABLE sales_orders ADD COLUMN notes TEXT", (err) => {
+        if (err) {
+          console.error('Error adding notes column:', err);
+        } else {
+          console.log('Notes column added successfully');
+        }
+      });
+    }
+  });
 }
 
 export default db;

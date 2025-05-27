@@ -31,6 +31,7 @@ const Orders: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(false);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
@@ -59,6 +60,7 @@ const Orders: React.FC = () => {
 
   const loadBasicData = async () => {
     try {
+      setLoading(true);
       const [hospitalsRes, doctorsRes, employeesRes, medicinesRes] = await Promise.all([
         hospitalAPI.getAll(),
         doctorAPI.getAll(),
@@ -71,10 +73,18 @@ const Orders: React.FC = () => {
       setMedicines(medicinesRes.data);
     } catch (error) {
       message.error('加载基础数据失败');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
+    // 确保基础数据已加载
+    if (hospitals.length === 0 || doctors.length === 0 || employees.length === 0 || medicines.length === 0) {
+      message.loading('正在加载数据...', 1);
+      await loadBasicData();
+    }
+
     form.resetFields();
     form.setFieldsValue({
       order_date: dayjs(),
@@ -105,17 +115,31 @@ const Orders: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     try {
+      console.log('提交的表单数据:', values);
+
       const submitData = {
         ...values,
         order_date: values.order_date.format('YYYY-MM-DD'),
       };
 
+      console.log('处理后的提交数据:', submitData);
+
       await orderAPI.create(submitData);
       message.success('创建成功');
       setModalVisible(false);
       loadOrders();
-    } catch (error) {
-      message.error('创建失败');
+    } catch (error: any) {
+      console.error('创建订单失败:', error);
+
+      let errorMessage = '创建失败';
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      console.log('错误信息:', errorMessage);
+      message.error(errorMessage);
     }
   };
 
@@ -281,6 +305,7 @@ const Orders: React.FC = () => {
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
         width={800}
+        confirmLoading={loading}
       >
         <Form
           form={form}
@@ -332,6 +357,7 @@ const Orders: React.FC = () => {
                       {...restField}
                       name={[name, 'medicine_id']}
                       rules={[{ required: true, message: '请选择药品' }]}
+                      label="药品"
                     >
                       <Select placeholder="选择药品" options={medicineOptions} style={{ width: 200 }} />
                     </Form.Item>
@@ -339,17 +365,19 @@ const Orders: React.FC = () => {
                       {...restField}
                       name={[name, 'quantity']}
                       rules={[{ required: true, message: '请输入数量' }]}
+                      label="数量"
                     >
-                      <InputNumber placeholder="数量" min={1} />
+                      <InputNumber placeholder="请输入数量" min={1} style={{ width: 120 }} />
                     </Form.Item>
                     <Form.Item
                       {...restField}
                       name={[name, 'unit_price']}
                       rules={[{ required: true, message: '请输入单价' }]}
+                      label="单价(元)"
                     >
-                      <InputNumber placeholder="单价" min={0} precision={2} />
+                      <InputNumber placeholder="请输入单价" min={0} precision={2} style={{ width: 120 }} />
                     </Form.Item>
-                    <Button onClick={() => remove(name)}>删除</Button>
+                    <Button onClick={() => remove(name)} style={{ marginTop: 30 }}>删除</Button>
                   </Space>
                 ))}
                 <Form.Item>

@@ -9,6 +9,7 @@ import hospitalRoutes from './routes/hospitals';
 import doctorRoutes from './routes/doctors';
 import employeeRoutes from './routes/employees';
 import orderRoutes from './routes/orders';
+import inventoryRoutes from './routes/inventory';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

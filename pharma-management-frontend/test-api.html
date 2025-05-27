@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API连接测试</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            
+            try {
+                // 测试药品API
+                console.log('Testing medicines API...');
+                const medicinesResponse = await fetch('http://localhost:3001/api/medicines');
+                const medicinesData = await medicinesResponse.json();
+                console.log('Medicines:', medicinesData);
+                
+                // 测试医院API
+                console.log('Testing hospitals API...');
+                const hospitalsResponse = await fetch('http://localhost:3001/api/hospitals');
+                const hospitalsData = await hospitalsResponse.json();
+                console.log('Hospitals:', hospitalsData);
+                
+                // 测试员工API
+                console.log('Testing employees API...');
+                const employeesResponse = await fetch('http://localhost:3001/api/employees');
+                const employeesData = await employeesResponse.json();
+                console.log('Employees:', employeesData);
+                
+                // 测试医生API
+                console.log('Testing doctors API...');
+                const doctorsResponse = await fetch('http://localhost:3001/api/doctors');
+                const doctorsData = await doctorsResponse.json();
+                console.log('Doctors:', doctorsData);
+                
+                results.innerHTML = `
+                    <h2>API测试成功！</h2>
+                    <p>药品数量: ${medicinesData.data.length}</p>
+                    <p>医院数量: ${hospitalsData.data.length}</p>
+                    <p>员工数量: ${employeesData.data.length}</p>
+                    <p>医生数量: ${doctorsData.data.length}</p>
+                    <h3>详细数据请查看控制台</h3>
+                `;
+                
+            } catch (error) {
+                console.error('API测试失败:', error);
+                results.innerHTML = `<h2 style="color: red;">API测试失败: ${error.message}</h2>`;
+            }
+        }
+        
+        // 页面加载后自动测试
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

@@ -9,6 +9,7 @@ import Hospitals from './pages/Hospitals';
 import Doctors from './pages/Doctors';
 import Employees from './pages/Employees';
 import Orders from './pages/Orders';
+import Inventory from './pages/Inventory';
 import './App.css';
 
 const App: FC = () => {
@@ -23,6 +24,7 @@ const App: FC = () => {
             <Route path="/doctors" element={<Doctors />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/inventory" element={<Inventory />} />
           </Routes>
         </Layout>
       </Router>

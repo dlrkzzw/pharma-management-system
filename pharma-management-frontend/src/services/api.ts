@@ -28,6 +28,16 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error('API Error:', error);
+
+    // 提取错误信息
+    if (error.response?.data?.error) {
+      error.message = error.response.data.error;
+    } else if (error.response?.data?.message) {
+      error.message = error.response.data.message;
+    } else if (error.response?.statusText) {
+      error.message = error.response.statusText;
+    }
+
     return Promise.reject(error);
   }
 );

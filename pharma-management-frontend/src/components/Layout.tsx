@@ -8,6 +8,7 @@ import {
   UserOutlined,
   TeamOutlined,
   ShoppingCartOutlined,
+  DatabaseOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
@@ -58,6 +59,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       icon: <ShoppingCartOutlined />,
       label: '订单管理',
     },
+    {
+      key: '/inventory',
+      icon: <DatabaseOutlined />,
+      label: '库存管理',
+    },
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => {
@@ -67,17 +73,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div style={{ 
-          height: 64, 
-          margin: 16, 
-          display: 'flex', 
+        <div style={{
+          height: 64,
+          margin: 16,
+          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <Title 
-            level={4} 
-            style={{ 
-              color: 'white', 
+          <Title
+            level={4}
+            style={{
+              color: 'white',
               margin: 0,
               fontSize: collapsed ? '14px' : '16px'
             }}
@@ -94,8 +100,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         />
       </Sider>
       <AntLayout>
-        <Header style={{ 
-          padding: 0, 
+        <Header style={{
+          padding: 0,
           background: colorBgContainer,
           display: 'flex',
           alignItems: 'center',
@@ -106,7 +112,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
               className: 'trigger',
               onClick: () => setCollapsed(!collapsed),
-              style: { 
+              style: {
                 fontSize: '18px',
                 lineHeight: '64px',
                 padding: '0 24px',
