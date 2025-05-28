@@ -3,16 +3,26 @@ import { db } from '../database/init';
 
 const router = express.Router();
 
-// 获取所有医生
+// 获取所有医生（支持按医院筛选）
 router.get('/', (req, res) => {
-  const sql = `
+  const { hospital_id } = req.query;
+
+  let sql = `
     SELECT d.*, h.name as hospital_name
     FROM doctors d
     LEFT JOIN hospitals h ON d.hospital_id = h.id
-    ORDER BY d.created_at DESC
   `;
-  
-  db.all(sql, [], (err, rows) => {
+
+  const params: any[] = [];
+
+  if (hospital_id) {
+    sql += ' WHERE d.hospital_id = ?';
+    params.push(hospital_id);
+  }
+
+  sql += ' ORDER BY d.created_at DESC';
+
+  db.all(sql, params, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
@@ -30,7 +40,7 @@ router.get('/:id', (req, res) => {
     LEFT JOIN hospitals h ON d.hospital_id = h.id
     WHERE d.id = ?
   `;
-  
+
   db.get(sql, [id], (err, row) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -80,9 +90,9 @@ router.post('/', (req, res) => {
       res.status(500).json({ error: err.message });
       return;
     }
-    res.status(201).json({ 
-      message: '医生创建成功', 
-      id: this.lastID 
+    res.status(201).json({
+      message: '医生创建成功',
+      id: this.lastID
     });
   });
 });
@@ -128,7 +138,7 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
   const sql = 'DELETE FROM doctors WHERE id = ?';
-  
+
   db.run(sql, [id], function(err) {
     if (err) {
       res.status(500).json({ error: err.message });

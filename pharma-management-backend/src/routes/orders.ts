@@ -13,9 +13,18 @@ function generateOrderNumber(): string {
   return `ORD${year}${month}${day}${time}`;
 }
 
-// 获取所有订单
+// 获取所有订单（支持筛选）
 router.get('/', (req, res) => {
-  const sql = `
+  const {
+    employee_id,
+    hospital_id,
+    start_date,
+    end_date,
+    status,
+    payment_status
+  } = req.query;
+
+  let sql = `
     SELECT so.*,
            h.name as hospital_name,
            d.name as doctor_name,
@@ -24,10 +33,116 @@ router.get('/', (req, res) => {
     LEFT JOIN hospitals h ON so.hospital_id = h.id
     LEFT JOIN doctors d ON so.doctor_id = d.id
     LEFT JOIN employees e ON so.employee_id = e.id
-    ORDER BY so.created_at DESC
+    WHERE 1=1
   `;
 
-  db.all(sql, [], (err, rows) => {
+  const params: any[] = [];
+
+  // 添加筛选条件
+  if (employee_id) {
+    sql += ' AND so.employee_id = ?';
+    params.push(employee_id);
+  }
+
+  if (hospital_id) {
+    sql += ' AND so.hospital_id = ?';
+    params.push(hospital_id);
+  }
+
+  if (start_date) {
+    sql += ' AND so.order_date >= ?';
+    params.push(start_date);
+  }
+
+  if (end_date) {
+    sql += ' AND so.order_date <= ?';
+    params.push(end_date);
+  }
+
+  if (status) {
+    sql += ' AND so.status = ?';
+    params.push(status);
+  }
+
+  if (payment_status) {
+    sql += ' AND so.payment_status = ?';
+    params.push(payment_status);
+  }
+
+  sql += ' ORDER BY so.created_at DESC';
+
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ data: rows });
+  });
+});
+
+// 获取订单导出数据（包含详细信息）
+router.get('/export/data', (req, res) => {
+  const {
+    employee_id,
+    hospital_id,
+    start_date,
+    end_date,
+    status,
+    payment_status
+  } = req.query;
+
+  let sql = `
+    SELECT so.*,
+           h.name as hospital_name, h.address as hospital_address,
+           d.name as doctor_name, d.phone as doctor_phone, d.department,
+           e.name as employee_name,
+           od.medicine_id, od.quantity, od.unit_price, od.subtotal,
+           m.name as medicine_name, m.specification, m.manufacturer
+    FROM sales_orders so
+    LEFT JOIN hospitals h ON so.hospital_id = h.id
+    LEFT JOIN doctors d ON so.doctor_id = d.id
+    LEFT JOIN employees e ON so.employee_id = e.id
+    LEFT JOIN order_details od ON so.id = od.order_id
+    LEFT JOIN medicines m ON od.medicine_id = m.id
+    WHERE 1=1
+  `;
+
+  const params: any[] = [];
+
+  // 添加筛选条件
+  if (employee_id) {
+    sql += ' AND so.employee_id = ?';
+    params.push(employee_id);
+  }
+
+  if (hospital_id) {
+    sql += ' AND so.hospital_id = ?';
+    params.push(hospital_id);
+  }
+
+  if (start_date) {
+    sql += ' AND so.order_date >= ?';
+    params.push(start_date);
+  }
+
+  if (end_date) {
+    sql += ' AND so.order_date <= ?';
+    params.push(end_date);
+  }
+
+  if (status) {
+    sql += ' AND so.status = ?';
+    params.push(status);
+  }
+
+  if (payment_status) {
+    sql += ' AND so.payment_status = ?';
+    params.push(payment_status);
+  }
+
+  sql += ' ORDER BY so.created_at DESC, od.id ASC';
+
+  db.all(sql, params, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;

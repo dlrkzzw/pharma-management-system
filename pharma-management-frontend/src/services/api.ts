@@ -84,7 +84,10 @@ export const employeeAPI = {
 
 // 订单相关API
 export const orderAPI = {
-  getAll: () => api.get('/orders'),
+  getAll: (params?: any) => {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return api.get(`/orders${queryString}`);
+  },
   getById: (id: number) => api.get(`/orders/${id}`),
   create: (data: any) => api.post('/orders', data),
   updateStatus: (id: number, data: any) => api.put(`/orders/${id}/status`, data),

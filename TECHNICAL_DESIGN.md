@@ -1,14 +1,29 @@
-# 医药代表业务管理系统 - 技术设计文档 v1.1.0
+# 医药代表业务管理系统 - 技术设计文档 v1.2.0
 
 ## 📋 文档信息
 
 | 项目信息 | 详情 |
 |---------|------|
 | **项目名称** | 医药代表业务管理系统 |
-| **版本** | v1.1.0 |
+| **版本** | v1.2.0 |
 | **文档类型** | 技术设计文档 |
 | **创建日期** | 2025-05-27 |
-| **技术栈** | React + TypeScript + Node.js + Express + SQLite |
+| **更新日期** | 2025-05-28 |
+| **技术栈** | React + TypeScript + Node.js + Express + SQLite + Excel导出 |
+
+## 🆕 v1.2.0 版本更新
+
+### 新增功能
+- ✅ **订单筛选功能**：支持按员工、医院、日期、状态等多维度筛选
+- ✅ **Excel导出功能**：支持按条件导出订单详细数据到Excel文件
+- ✅ **级联选择功能**：医院-医生级联选择，提升用户体验
+- ✅ **响应式布局优化**：改进筛选条件布局，支持多屏幕尺寸
+
+### 技术改进
+- 🔧 **API增强**：订单API支持多参数筛选查询
+- 🔧 **前端优化**：使用xlsx库实现Excel导出功能
+- 🔧 **UI/UX改进**：优化表单布局和用户交互体验
+- 🔧 **数据处理**：改进参数过滤和验证逻辑
 
 ## 🏗️ 系统架构设计
 
@@ -257,15 +272,26 @@ src/
 | POST | `/purchase` | 添加进货记录 | medicine_id, supplier_name, quantity, etc. |
 | POST | `/adjustment` | 库存调整 | medicine_id, adjustment_type, quantity, notes |
 
-#### 3. 订单管理 (/api/orders)
+#### 3. 订单管理 (/api/orders) 🔄
 
 | 方法 | 路径 | 功能 | 参数 |
 |------|------|------|------|
-| GET | `/` | 获取订单列表 | - |
+| GET | `/` | 获取订单列表 | employee_id?, hospital_id?, start_date?, end_date?, status?, payment_status? |
 | GET | `/:id` | 获取订单详情 | id |
+| GET | `/export/data` | 获取导出数据 🆕 | employee_id?, hospital_id?, start_date?, end_date?, status?, payment_status? |
 | POST | `/` | 创建订单 | hospital_id, doctor_id, employee_id, details |
 | PUT | `/:id/status` | 更新订单状态 | id, status, payment_status |
 | DELETE | `/:id` | 删除订单 | id |
+
+#### 4. 医生管理 (/api/doctors) 🔄
+
+| 方法 | 路径 | 功能 | 参数 |
+|------|------|------|------|
+| GET | `/` | 获取医生列表 | hospital_id? (支持按医院筛选) 🆕 |
+| GET | `/:id` | 获取医生详情 | id |
+| POST | `/` | 创建医生 | name, hospital_id, department, etc. |
+| PUT | `/:id` | 更新医生 | id, 更新字段 |
+| DELETE | `/:id` | 删除医生 | id |
 
 ### 核心业务逻辑
 
@@ -396,6 +422,93 @@ async function adjustInventory(adjustmentData) {
 }
 ```
 
+#### 4. 订单筛选查询逻辑 🆕
+
+```typescript
+// 订单筛选查询逻辑
+async function getFilteredOrders(filters) {
+  let sql = `
+    SELECT so.*,
+           h.name as hospital_name,
+           d.name as doctor_name,
+           e.name as employee_name
+    FROM sales_orders so
+    LEFT JOIN hospitals h ON so.hospital_id = h.id
+    LEFT JOIN doctors d ON so.doctor_id = d.id
+    LEFT JOIN employees e ON so.employee_id = e.id
+    WHERE 1=1
+  `;
+
+  const params = [];
+
+  // 动态添加筛选条件
+  if (filters.employee_id) {
+    sql += ' AND so.employee_id = ?';
+    params.push(filters.employee_id);
+  }
+
+  if (filters.hospital_id) {
+    sql += ' AND so.hospital_id = ?';
+    params.push(filters.hospital_id);
+  }
+
+  if (filters.start_date) {
+    sql += ' AND so.order_date >= ?';
+    params.push(filters.start_date);
+  }
+
+  if (filters.end_date) {
+    sql += ' AND so.order_date <= ?';
+    params.push(filters.end_date);
+  }
+
+  if (filters.status) {
+    sql += ' AND so.status = ?';
+    params.push(filters.status);
+  }
+
+  if (filters.payment_status) {
+    sql += ' AND so.payment_status = ?';
+    params.push(filters.payment_status);
+  }
+
+  sql += ' ORDER BY so.created_at DESC';
+
+  return await db.all(sql, params);
+}
+```
+
+#### 5. Excel导出数据处理逻辑 🆕
+
+```typescript
+// Excel导出数据查询逻辑
+async function getExportData(filters) {
+  let sql = `
+    SELECT so.*,
+           h.name as hospital_name, h.address as hospital_address,
+           d.name as doctor_name, d.phone as doctor_phone, d.department,
+           e.name as employee_name,
+           od.medicine_id, od.quantity, od.unit_price, od.subtotal,
+           m.name as medicine_name, m.specification, m.manufacturer
+    FROM sales_orders so
+    LEFT JOIN hospitals h ON so.hospital_id = h.id
+    LEFT JOIN doctors d ON so.doctor_id = d.id
+    LEFT JOIN employees e ON so.employee_id = e.id
+    LEFT JOIN order_details od ON so.id = od.order_id
+    LEFT JOIN medicines m ON od.medicine_id = m.id
+    WHERE 1=1
+  `;
+
+  // 应用相同的筛选逻辑
+  const params = [];
+  // ... 筛选条件处理逻辑 ...
+
+  sql += ' ORDER BY so.created_at DESC, od.id ASC';
+
+  return await db.all(sql, params);
+}
+```
+
 ## 🎨 前端架构设计
 
 ### 组件架构
@@ -503,28 +616,129 @@ const Inventory: React.FC = () => {
 
 ```typescript
 // Orders.tsx 关键改进
-const handleSubmit = async (values: any) => {
-  try {
-    const submitData = {
-      ...values,
-      order_date: values.order_date.format('YYYY-MM-DD'),
-    };
+const Orders: React.FC = () => {
+  // 新增状态管理
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+  const [filters, setFilters] = useState<FilterParams>({});
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
 
-    await orderAPI.create(submitData);
-    message.success('创建成功');
-    setModalVisible(false);
-    loadOrders();
-  } catch (error: any) {
-    // 改进的错误处理
-    let errorMessage = '创建失败';
-    if (error.response?.data?.error) {
-      errorMessage = error.response.data.error;
-    } else if (error.message) {
-      errorMessage = error.message;
+  // 筛选功能
+  const handleFilter = (values: any) => {
+    const filterParams: any = {};
+
+    // 只添加有值的参数
+    if (values.employee_id) filterParams.employee_id = values.employee_id;
+    if (values.hospital_id) filterParams.hospital_id = values.hospital_id;
+    if (values.status) filterParams.status = values.status;
+    if (values.payment_status) filterParams.payment_status = values.payment_status;
+
+    if (values.date_range && values.date_range.length === 2) {
+      filterParams.start_date = values.date_range[0].format('YYYY-MM-DD');
+      filterParams.end_date = values.date_range[1].format('YYYY-MM-DD');
     }
-    message.error(errorMessage);
-  }
+
+    setFilters(filterParams);
+    loadOrders(filterParams);
+  };
+
+  // 医院-医生级联选择
+  const handleHospitalChange = (hospitalId: number) => {
+    if (hospitalId) {
+      const filtered = doctors.filter(doctor => doctor.hospital_id === hospitalId);
+      setFilteredDoctors(filtered);
+    } else {
+      setFilteredDoctors(doctors);
+    }
+    form.setFieldsValue({ doctor_id: undefined });
+  };
+
+  // Excel导出功能
+  const handleExport = async (values: any) => {
+    try {
+      setExportLoading(true);
+
+      const exportParams: any = {};
+
+      // 只添加有值的参数
+      if (values.employee_id) exportParams.employee_id = values.employee_id;
+      if (values.hospital_id) exportParams.hospital_id = values.hospital_id;
+      if (values.status) exportParams.status = values.status;
+      if (values.payment_status) exportParams.payment_status = values.payment_status;
+
+      // 日期范围是必需的
+      if (values.date_range && values.date_range.length === 2) {
+        exportParams.start_date = values.date_range[0].format('YYYY-MM-DD');
+        exportParams.end_date = values.date_range[1].format('YYYY-MM-DD');
+      } else {
+        message.error('请选择日期范围');
+        return;
+      }
+
+      // 调用导出API并处理Excel生成
+      const response = await fetch(`http://localhost:3001/api/orders/export/data?${new URLSearchParams(exportParams)}`);
+      const data = await response.json();
+
+      if (data.data && data.data.length > 0) {
+        // 使用xlsx库生成Excel文件
+        const exportData = data.data.map((item: any) => ({
+          '订单编号': item.order_number,
+          '医院名称': item.hospital_name,
+          '医院地址': item.hospital_address,
+          '医生姓名': item.doctor_name,
+          '医生电话': item.doctor_phone,
+          '科室': item.department,
+          '负责员工': item.employee_name,
+          '订单日期': item.order_date,
+          '药品名称': item.medicine_name,
+          '规格': item.specification,
+          '生产厂家': item.manufacturer,
+          '数量': item.quantity,
+          '单价': item.unit_price,
+          '小计': item.subtotal,
+          '订单总额': item.total_amount,
+          '订单状态': item.status,
+          '付款状态': item.payment_status,
+          '备注': item.notes,
+          '创建时间': item.created_at,
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '订单明细');
+
+        const fileName = `订单明细_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.xlsx`;
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/octet-stream' });
+        saveAs(blob, fileName);
+
+        message.success(`导出成功！共导出 ${exportData.length} 条记录`);
+        setExportModalVisible(false);
+      } else {
+        message.warning('没有符合条件的数据可导出');
+      }
+    } catch (error) {
+      message.error('导出失败');
+    } finally {
+      setExportLoading(false);
+    }
+  };
 };
+```
+
+#### 3. 新增依赖库 🆕
+
+```json
+// package.json 新增依赖
+{
+  "dependencies": {
+    "xlsx": "^0.18.5",
+    "file-saver": "^2.0.5"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.5"
+  }
+}
 ```
 
 ## 🔄 数据流设计
@@ -728,6 +942,26 @@ describe('Order Creation Flow', () => {
 
 ---
 
-*文档版本：v1.1.0*
-*最后更新：2025-05-27*
+## 📝 更新日志
+
+### v1.2.0 (2025-05-28)
+- ✅ 新增订单筛选功能：支持按员工、医院、日期、状态等多维度筛选
+- ✅ 新增Excel导出功能：支持按条件导出订单详细数据
+- ✅ 新增级联选择功能：医院-医生级联选择，提升用户体验
+- ✅ 优化前端布局：改进筛选条件布局，支持响应式设计
+- 🔧 API增强：订单API支持多参数筛选查询
+- 🔧 前端优化：集成xlsx库实现Excel导出功能
+- 🔧 UI/UX改进：优化表单布局和用户交互体验
+
+### v1.1.0 (2025-05-27)
+- ✅ 完成基础功能开发：药品、医院、医生、员工、订单管理
+- ✅ 实现库存管理：进货记录、库存变动追踪
+- ✅ 订单-库存联动：订单创建自动扣减库存
+- 🔧 建立完整的数据库设计和API架构
+- 🔧 实现前后端分离架构
+
+---
+
+*文档版本：v1.2.0*
+*最后更新：2025-05-28*
 *项目仓库：https://github.com/dlrkzzw/pharma-management-system*
